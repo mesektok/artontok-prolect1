@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Copy of ArtOnTok",
+  "description": "Premium Art Coaching and Speed Rich Club platform with a luxurious black and purple theme and integrated admin CMS.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
