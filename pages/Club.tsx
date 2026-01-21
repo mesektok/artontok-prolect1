@@ -17,7 +17,7 @@ const Club: React.FC<ClubProps> = ({ posts }) => {
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [paymentStep, setPaymentStep] = useState<'select' | 'processing' | 'success'>('select');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'kakao'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'kakao' | 'naver'>('card');
   const [isVip, setIsVip] = useState(false);
 
   const sortedPosts = [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -30,45 +30,72 @@ const Club: React.FC<ClubProps> = ({ posts }) => {
     setSelectedPost(post);
   };
 
+  /**
+   * 포트원 V2 결제 실행 함수
+   * 사용자가 라디오 버튼으로 선택한 paymentMethod에 따라 파라미터를 분기하여 호출합니다.
+   */
   const handlePayment = async () => {
     if (typeof window.PortOne === 'undefined') {
-      alert("결제 모듈이 아직 로드되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+      alert("결제 모듈이 아직 로드되지 않았습니다. 잠시만 기다려주세요.");
       return;
     }
 
     setPaymentStep('processing');
 
     try {
+      // 공통 파라미터 설정
       const paymentParams: any = {
-        storeId: "store-d443f747-cc48-4a29-94d8-64af2fd81488",
-        paymentId: `payment-${crypto.randomUUID()}`,
-        orderName: "스피드부자 클럽 VIP 멤버십",
+        storeId: "store-d443f747-cc48-4a29-94d8-64af2fd81488", // 가맹점 식별 코드
+        paymentId: `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        orderName: "아트온톡 VIP 멤버십 (1개월)",
         totalAmount: 99000,
-        currency: "KRW",
+        currency: "CURRENCY_KRW",
+        customer: {
+          fullName: "아트온톡 고객",
+          phoneNumber: "010-0000-0000",
+        },
+        redirectUrl: window.location.origin + window.location.pathname,
       };
 
+      // 1. 카카오페이 선택 시
       if (paymentMethod === 'kakao') {
         paymentParams.payMethod = "EASY_PAY";
-        paymentParams.pgProvider = "KAKAOPAY";
-        paymentParams.easyPay = { provider: "KAKAOPAY" };
-      } else {
+        // 포트원 V2에서는 간편결제의 경우 pgProvider와 easyPay.provider를 맞춰야 합니다.
+        paymentParams.pgProvider = "PG_PROVIDER_KAKAOPAY";
+        paymentParams.easyPay = {
+          provider: "EASY_PAY_PROVIDER_KAKAOPAY"
+        };
+      } 
+      // 2. 네이버페이 선택 시
+      else if (paymentMethod === 'naver') {
+        paymentParams.payMethod = "EASY_PAY";
+        paymentParams.pgProvider = "PG_PROVIDER_NAVERPAY";
+        paymentParams.easyPay = {
+          provider: "EASY_PAY_PROVIDER_NAVERPAY"
+        };
+      } 
+      // 3. 신용/체크카드 선택 시 (기본값)
+      else {
         paymentParams.payMethod = "CARD";
-        paymentParams.pgProvider = "TOSSPAYMENTS"; 
+        paymentParams.pgProvider = "PG_PROVIDER_TOSSPAYMENTS"; // 토스페이먼츠 연동 기준
       }
 
+      // 실제 포트원 결제창 호출
       const response = await window.PortOne.requestPayment(paymentParams);
 
+      // 결제 결과 처리
       if (response.code != null) {
-        alert(`결제 실패: ${response.message}`);
-        setPaymentStep('select');
-        return;
+        // 오류 코드가 있다면 결제 실패 (사용자 취소 포함)
+        throw new Error(response.message || "결제에 실패했습니다.");
       }
 
+      // 결제 성공 시 (response.code가 없는 경우 V2 성공)
+      // 실제 서비스 시에는 서버(Backend)에서 결제 완료 검증 로직을 거쳐야 합니다.
       setIsVip(true);
       setPaymentStep('success');
-    } catch (error) {
-      console.error("Payment Error:", error);
-      alert("결제 통신 중 오류가 발생했습니다.");
+    } catch (error: any) {
+      console.error("Payment Process Error:", error);
+      alert(error.message || "결제 중 문제가 발생했습니다. 다시 시도해 주세요.");
       setPaymentStep('select');
     }
   };
@@ -211,22 +238,73 @@ const Club: React.FC<ClubProps> = ({ posts }) => {
               <>
                 <h3 className="text-3xl font-black mb-2 text-white">VIP Membership</h3>
                 <p className="text-gray-500 text-sm mb-10 leading-relaxed font-light">스피드부자 클럽의 고품격 지식과 정보를 누리세요. 부의 성장을 가속화합니다.</p>
-                <div className="space-y-4">
-                  <div onClick={() => setPaymentMethod('card')} className={`p-6 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${paymentMethod === 'card' ? 'border-purple-600 bg-purple-600/10' : 'border-white/5 bg-black/50'}`}>
-                    <p className="font-bold text-sm">신용/체크카드</p>
-                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === 'card' ? 'border-purple-600 bg-purple-600' : 'border-gray-700'}`}></div>
+                
+                {/* Payment Selection Area (Radio Button Style) */}
+                <div className="space-y-3">
+                  {/* Credit/Check Card Option */}
+                  <div 
+                    onClick={() => setPaymentMethod('card')} 
+                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${paymentMethod === 'card' ? 'border-purple-600 bg-purple-600/10' : 'border-white/5 bg-black/50 hover:border-white/20'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                      </div>
+                      <p className="font-bold text-sm text-white">신용/체크카드</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'card' ? 'border-purple-600' : 'border-gray-700'}`}>
+                      {paymentMethod === 'card' && <div className="w-2.5 h-2.5 bg-purple-600 rounded-full"></div>}
+                    </div>
                   </div>
-                  <div onClick={() => setPaymentMethod('kakao')} className={`p-6 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${paymentMethod === 'kakao' ? 'border-[#FAE100] bg-[#FAE100]/10' : 'border-white/5 bg-black/50'}`}>
-                    <p className="font-bold text-sm">카카오페이</p>
-                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === 'kakao' ? 'border-[#FAE100] bg-[#FAE100]' : 'border-gray-700'}`}></div>
+
+                  {/* Kakao Pay Option */}
+                  <div 
+                    onClick={() => setPaymentMethod('kakao')} 
+                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${paymentMethod === 'kakao' ? 'border-[#FAE100] bg-[#FAE100]/10' : 'border-white/5 bg-black/50 hover:border-white/20'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#FAE100] rounded-lg flex items-center justify-center font-black text-black text-[10px]">TALK</div>
+                      <p className="font-bold text-sm text-white">카카오페이</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'kakao' ? 'border-[#FAE100]' : 'border-gray-700'}`}>
+                      {paymentMethod === 'kakao' && <div className="w-2.5 h-2.5 bg-[#FAE100] rounded-full"></div>}
+                    </div>
                   </div>
+
+                  {/* Naver Pay Option */}
+                  <div 
+                    onClick={() => setPaymentMethod('naver')} 
+                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${paymentMethod === 'naver' ? 'border-[#03C75A] bg-[#03C75A]/10' : 'border-white/5 bg-black/50 hover:border-white/20'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#03C75A] rounded-lg flex items-center justify-center font-black text-white text-[10px]">N Pay</div>
+                      <p className="font-bold text-sm text-white">네이버 페이</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'naver' ? 'border-[#03C75A]' : 'border-gray-700'}`}>
+                      {paymentMethod === 'naver' && <div className="w-2.5 h-2.5 bg-[#03C75A] rounded-full"></div>}
+                    </div>
+                  </div>
+
+                  {/* Final Payment Button */}
                   <button 
                     onClick={handlePayment} 
                     disabled={paymentStep === 'processing'}
-                    className="w-full py-5 bg-purple-600 text-white font-black rounded-2xl mt-8 hover:bg-purple-700 transition-all disabled:opacity-50 active:scale-[0.98]"
+                    className={`w-full py-5 text-white font-black rounded-2xl mt-8 transition-all disabled:opacity-50 active:scale-[0.98] shadow-lg ${
+                      paymentMethod === 'kakao' ? 'bg-[#FAE100] !text-black shadow-[#FAE100]/20' : 
+                      paymentMethod === 'naver' ? 'bg-[#03C75A] shadow-[#03C75A]/20' : 
+                      'bg-purple-600 shadow-purple-600/20'
+                    }`}
                   >
-                    {paymentStep === 'processing' ? '결제 처리 중...' : '99,000원 결제하기'}
+                    {paymentStep === 'processing' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        결제창으로 이동 중...
+                      </span>
+                    ) : '99,000원 결제하기'}
                   </button>
+                  <p className="text-[10px] text-gray-500 text-center mt-4 px-4 leading-relaxed font-light">
+                    결제하기 버튼 클릭 시 이용약관 및 개인정보 처리방침에 동의하며, 유료 멤버십 서비스가 즉시 시작됨을 확인합니다.
+                  </p>
                 </div>
               </>
             )}
@@ -234,7 +312,7 @@ const Club: React.FC<ClubProps> = ({ posts }) => {
         </div>
       )}
 
-      {/* Post Detail Modal */}
+      {/* Post Detail Modal (VIP 전용) */}
       {selectedPost && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={() => setSelectedPost(null)}></div>
