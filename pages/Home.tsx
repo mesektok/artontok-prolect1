@@ -10,7 +10,43 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ settings, posts, onNavigate }) => {
   const [showAuctionModal, setShowAuctionModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const blogPosts = posts.slice(0, 4);
+
+  const handleAuctionSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      // 실제 서비스 시 Formspree 또는 자체 API 엔드포인트 사용
+      const response = await fetch("https://formspree.io/f/mwvvvanz", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          subject: "[아트온톡] 프라이빗 옥션 투어 문의"
+        }),
+      });
+
+      if (response.ok) {
+        setIsSubmitted(true);
+        setTimeout(() => {
+          setIsSubmitted(false);
+          setShowAuctionModal(false);
+        }, 3000);
+      } else {
+        throw new Error("전송 실패");
+      }
+    } catch (error) {
+      alert("문의 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="animate-in fade-in duration-700">
@@ -152,21 +188,99 @@ const Home: React.FC<HomeProps> = ({ settings, posts, onNavigate }) => {
         </div>
       </section>
 
-      {/* Auction Modal */}
+      {/* Enhanced Auction Inquiry Modal */}
       {showAuctionModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setShowAuctionModal(false)}></div>
-          <div className="relative bg-zinc-900 w-full max-w-2xl p-10 md:p-16 rounded-[3rem] border border-purple-500/20 shadow-2xl animate-in zoom-in-95">
-             <button onClick={() => setShowAuctionModal(false)} className="absolute top-8 right-8 text-gray-500 hover:text-white transition-colors">
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => !isSubmitting && setShowAuctionModal(false)}></div>
+          <div className="relative bg-zinc-900 w-full max-w-2xl p-8 md:p-12 rounded-[3rem] border border-purple-500/20 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[90vh]">
+             <button 
+              onClick={() => setShowAuctionModal(false)} 
+              className="absolute top-8 right-8 text-gray-500 hover:text-white transition-colors p-2"
+              disabled={isSubmitting}
+             >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
-             <h3 className="text-3xl font-black mb-6">Auction Tour Inquiry</h3>
-             <p className="text-gray-400 mb-10 leading-relaxed font-light">다음 투어 일정과 프라이빗 참석 권한에 대한 상세 안내를 보내드립니다. 예술 투자의 살아있는 현장에 여러분을 초대합니다.</p>
-             <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('문의가 성공적으로 접수되었습니다. 곧 연락드리겠습니다.'); setShowAuctionModal(false); }}>
-                <input type="text" placeholder="성함" className="w-full bg-black border border-white/10 p-4 rounded-xl outline-none focus:border-purple-500 transition-all" required />
-                <input type="tel" placeholder="연락처" className="w-full bg-black border border-white/10 p-4 rounded-xl outline-none focus:border-purple-500 transition-all" required />
-                <button className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl transition-all active:scale-[0.98]">투어 브로셔 신청</button>
-             </form>
+             
+             {isSubmitted ? (
+               <div className="text-center py-20 animate-in fade-in zoom-in-95">
+                 <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-8">
+                   <svg className="w-10 h-10 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                   </svg>
+                 </div>
+                 <h3 className="text-3xl font-black mb-4">전송 완료</h3>
+                 <p className="text-gray-400">투어 매니저가 확인 후 24시간 내에 연락드리겠습니다.</p>
+               </div>
+             ) : (
+               <>
+                 <header className="mb-10">
+                    <span className="text-purple-500 text-[10px] font-black tracking-[0.3em] uppercase mb-2 block">Application Form</span>
+                    <h3 className="text-3xl font-black mb-4">Auction Tour Inquiry</h3>
+                    <p className="text-gray-400 leading-relaxed font-light text-sm">참가 희망하시는 투어 일정과 관심 분야를 남겨주시면 <br />프라이빗 초대권과 상세 브로셔를 보내드립니다.</p>
+                 </header>
+
+                 <form className="space-y-5" onSubmit={handleAuctionSubmit}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                       <div className="space-y-1.5">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">성함</label>
+                          <input name="name" type="text" placeholder="홍길동" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm" required />
+                       </div>
+                       <div className="space-y-1.5">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">연락처</label>
+                          <input name="phone" type="tel" placeholder="010-0000-0000" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm" required />
+                       </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                       <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">이메일 주소</label>
+                       <input name="email" type="email" placeholder="example@artontok.kr" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm" required />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                       <div className="space-y-1.5">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">관심 경매 분야</label>
+                          <select name="interest" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 transition-all text-sm appearance-none cursor-pointer">
+                             <option value="modern">국내 근현대 미술</option>
+                             <option value="old">한국 고미술</option>
+                             <option value="global">해외 거장 (Blue-chip)</option>
+                             <option value="rookie">라이징 루키/신진 작가</option>
+                             <option value="all">전분야 (컬렉팅 입문)</option>
+                          </select>
+                       </div>
+                       <div className="space-y-1.5">
+                          <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">동반 인원</label>
+                          <select name="guests" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 transition-all text-sm appearance-none cursor-pointer">
+                             <option value="1">본인 1인</option>
+                             <option value="2">2인 (동반 1인)</option>
+                             <option value="3">3인 이상 (단체/기업)</option>
+                          </select>
+                       </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                       <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">추가 문의 사항 (선택)</label>
+                       <textarea name="message" rows={3} placeholder="참여 희망 시기나 특별한 요청사항이 있다면 남겨주세요." className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 transition-all text-sm resize-none"></textarea>
+                    </div>
+
+                    <button 
+                      disabled={isSubmitting}
+                      className="w-full py-5 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-purple-600/20 disabled:opacity-50 flex items-center justify-center gap-3 mt-4"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                          전송 중...
+                        </>
+                      ) : '투어 브로셔 및 일정 신청하기'}
+                    </button>
+                    
+                    <p className="text-[9px] text-gray-600 text-center leading-relaxed font-light">
+                      본 신청은 투어 확정이 아니며, 담당 큐레이터의 확인 후 개별 안내가 나갑니다. <br />
+                      수집된 정보는 투어 안내 목적으로만 사용되며 안전하게 보호됩니다.
+                    </p>
+                 </form>
+               </>
+             )}
           </div>
         </div>
       )}
