@@ -4,11 +4,12 @@ import { SiteSettings } from '../types';
 
 interface CoachingProps {
   settings: SiteSettings;
+  onOpenInquiry?: () => void;
 }
 
-type QuizStep = 'start' | 'q1' | 'q2' | 'q3' | 'result' | 'form' | 'dealer_info';
+type QuizStep = 'start' | 'q1' | 'q2' | 'q3' | 'result' | 'form';
 
-const Coaching: React.FC<CoachingProps> = ({ settings }) => {
+const Coaching: React.FC<CoachingProps> = ({ settings, onOpenInquiry }) => {
   const [quizStep, setQuizStep] = useState<QuizStep>('start');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -237,7 +238,7 @@ const Coaching: React.FC<CoachingProps> = ({ settings }) => {
                   <textarea name="memo" placeholder="특별히 궁금한 점이 있으신가요?" rows={4} className="w-full bg-black border border-white/10 rounded-xl p-4 text-sm focus:border-purple-500 outline-none"></textarea>
                   <button 
                     disabled={isSubmitting}
-                    className="w-full py-5 bg-purple-600 font-black rounded-xl hover:bg-purple-700 transition-all shadow-xl shadow-purple-500/20"
+                    className="w-full py-5 bg-purple-600 font-black rounded-xl hover:bg-purple-700 transition-all shadow-xl shadow-purple-600/20"
                   >
                     {isSubmitting ? '전송 중...' : '솔루션 상세 리포트 신청'}
                   </button>
@@ -248,41 +249,73 @@ const Coaching: React.FC<CoachingProps> = ({ settings }) => {
         )}
       </section>
 
-      {/* Art Dealer Specialist Section */}
-      <section className="mb-32 py-20 bg-zinc-950 rounded-[3rem] border border-purple-500/10 overflow-hidden relative">
-         <div className="max-w-5xl mx-auto px-8">
-            <div className="flex flex-col md:flex-row gap-16 items-center">
-               <div className="flex-1">
-                  <span className="text-purple-500 text-xs font-black uppercase tracking-[0.3em]">Professional Path</span>
-                  <h2 className="text-4xl md:text-5xl font-black mt-4 mb-8">아트 딜러 양성 과정</h2>
-                  <p className="text-gray-400 leading-relaxed mb-8">
-                    단순한 컬렉터를 넘어 예술의 가치를 전달하는 전문가가 되십시오. 
+      {/* Art Dealer Specialist Section - REVERTED TO CLEAN VERSION */}
+      <section className="mb-32 py-24 bg-zinc-950 rounded-[4rem] border border-purple-500/10 overflow-hidden relative">
+         <div className="max-w-6xl mx-auto px-10">
+            <div className="flex flex-col lg:flex-row gap-20 items-center">
+               <div className="flex-1 animate-in slide-in-from-left-8 duration-1000">
+                  <span className="text-purple-500 text-xs font-black uppercase tracking-[0.4em] mb-4 block">Professional Path</span>
+                  <h2 className="text-5xl md:text-6xl font-black mt-2 mb-10 leading-[1.1]">아트 딜러 <br /><span className="text-purple-400 font-serif italic text-3xl md:text-4xl block mt-2">전문가 양성 과정</span></h2>
+                  <p className="text-gray-400 leading-relaxed mb-10 font-light text-lg">
+                    단순한 컬렉터를 넘어 예술의 가치를 전달하는 전문가가 되십시오. <br />
                     아트 온 톡의 딜러 프로그램은 실무 지식, 네트워크, 그리고 실제 거래 시스템을 제공합니다.
                   </p>
-                  <ul className="space-y-4 mb-10">
-                    {["국내외 옥션 프로세스 마스터", "작품 진위 판별 및 컨디션 체크 실무", "고액 자산가 응대 매너 및 상담 기술", "아트 온 톡 인증 공식 딜러 자격 부여"].map(item => (
-                      <li key={item} className="flex items-center gap-3 text-sm text-gray-300">
-                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div> {item}
+                  <ul className="space-y-5 mb-12">
+                    {[
+                      { text: "국내외 옥션 프로세스 마스터", color: "bg-purple-500" },
+                      { text: "작품 진위 판별 및 컨디션 체크 실무", color: "bg-purple-400" },
+                      { text: "고액 자산가 응대 매너 및 상담 기술", color: "bg-purple-600" },
+                      { text: "아트 온 톡 인증 공식 딜러 자격 부여", color: "bg-white" }
+                    ].map((item, idx) => (
+                      <li key={idx} className="flex items-center gap-4 text-base text-gray-300 group">
+                        <div className={`w-1.5 h-1.5 ${item.color} rounded-full group-hover:scale-150 transition-transform`}></div> 
+                        {item.text}
                       </li>
                     ))}
                   </ul>
                   <button 
                     onClick={() => {
-                      setAnswers({ program: 'Art Dealer Program' });
-                      setQuizStep('form');
+                      if(onOpenInquiry) onOpenInquiry();
                     }}
-                    className="px-10 py-4 bg-purple-600/20 border border-purple-500/30 text-purple-400 font-bold rounded-full hover:bg-purple-600 hover:text-white transition-all"
+                    className="group relative px-12 py-5 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 transition-all shadow-2xl shadow-purple-600/30 active:scale-95 overflow-hidden"
                   >
-                    딜러 과정 문의하기
+                    <span className="relative z-10">과정 상세 문의하기</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                   </button>
                </div>
-               <div className="flex-1 relative">
-                  <div className="aspect-[4/5] bg-zinc-900 rounded-3xl overflow-hidden border border-white/5 rotate-3 hover:rotate-0 transition-transform duration-700">
-                    <img src="https://images.unsplash.com/photo-1571115764595-644a1f56a55c?auto=format&fit=crop&q=80&w=600" className="w-full h-full object-cover grayscale" alt="Dealer" />
+
+               <div className="flex-1 relative w-full max-w-md lg:max-w-none">
+                  <div className="relative aspect-[4/5] bg-zinc-900 rounded-[2.5rem] overflow-hidden border border-white/5 rotate-2 hover:rotate-0 transition-all duration-1000 group shadow-[0_40px_80px_rgba(0,0,0,0.6)]">
+                    <img 
+                      src="https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&q=80&w=1200" 
+                      className="w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-1000 scale-105 group-hover:scale-100" 
+                      alt="Dealer Specialist in Gallery" 
+                    />
+                    
+                    {/* Floating Label */}
+                    <div className="absolute top-8 left-8 px-6 py-3 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl">
+                       <span className="text-white text-xs font-black tracking-[0.3em] uppercase">Dealer</span>
+                    </div>
+
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
                   </div>
-                  <div className="absolute -bottom-6 -left-6 p-6 bg-white text-black font-black rounded-2xl shadow-2xl">
-                    Art Master Certificate
+                  
+                  {/* Premium Certificate Badge */}
+                  <div className="absolute -bottom-8 -left-8 px-10 py-6 bg-white text-black font-black rounded-[1.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.5)] transform -rotate-2 hover:rotate-0 transition-all duration-500 cursor-default select-none border border-gray-100 group/badge">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg group-hover/badge:rotate-12 transition-transform">
+                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      </div>
+                      <span className="text-lg md:text-xl tracking-tight font-black">Art Master Certificate</span>
+                    </div>
+                    <div className="absolute bottom-3 left-10 right-10 h-[1px] bg-gray-100"></div>
                   </div>
+
+                  {/* Back Glow Effect */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-purple-600/10 blur-[120px] -z-10 rounded-full"></div>
                </div>
             </div>
          </div>
