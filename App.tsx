@@ -9,35 +9,26 @@ import Club from './pages/Club';
 import Blog from './pages/Blog';
 import Dashboard from './pages/Dashboard';
 import Coaching from './pages/Coaching';
+import InquiryModal from './components/InquiryModal';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('home');
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
   const [posts, setPosts] = useState<Post[]>(SAMPLE_POSTS);
+  const [isInquiryOpen, setIsInquiryOpen] = useState(false);
 
-  // Persistence with Improved Error Handling
+  // Persistence
   useEffect(() => {
     try {
       const savedSettings = localStorage.getItem('artontok_settings');
       const savedPosts = localStorage.getItem('artontok_posts');
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        if (parsedSettings && typeof parsedSettings === 'object') {
-          setSettings(parsedSettings);
-        }
-      }
-      if (savedPosts) {
-        const parsedPosts = JSON.parse(savedPosts);
-        if (Array.isArray(parsedPosts)) {
-          setPosts(parsedPosts);
-        }
-      }
+      if (savedSettings) setSettings(JSON.parse(savedSettings));
+      if (savedPosts) setPosts(JSON.parse(savedPosts));
     } catch (error) {
-      console.warn("Could not load saved data from localStorage:", error);
+      console.warn("Could not load saved data:", error);
     }
   }, []);
 
-  // Automatic scroll to top on view change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [view]);
@@ -64,11 +55,11 @@ const App: React.FC = () => {
       case 'home':
         return <Home settings={settings} posts={posts} onNavigate={setView} />;
       case 'coaching':
-        return <Coaching settings={settings} />;
+        return <Coaching settings={settings} onOpenInquiry={() => setIsInquiryOpen(true)} />;
       case 'club':
         return <Club settings={settings} posts={posts.filter(p => p.category === 'club')} />;
       case 'blog':
-        return <Blog posts={posts} />;
+        return <Blog posts={posts} onOpenInquiry={() => setIsInquiryOpen(true)} />;
       case 'admin':
         return (
           <Dashboard 
@@ -86,11 +77,14 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-purple-500 selection:text-white antialiased">
-      <Navbar currentView={view} setView={setView} />
+      <Navbar currentView={view} setView={setView} onOpenInquiry={() => setIsInquiryOpen(true)} />
       <main className="pt-16 min-h-[calc(100vh-160px)]">
         {renderContent()}
       </main>
       <Footer settings={settings} onNavigate={setView} />
+      
+      {/* 전역 문의 모달 */}
+      <InquiryModal isOpen={isInquiryOpen} onClose={() => setIsInquiryOpen(false)} />
     </div>
   );
 };

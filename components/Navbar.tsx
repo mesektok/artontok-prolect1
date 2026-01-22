@@ -5,12 +5,12 @@ import { ViewType } from '../types';
 interface NavbarProps {
   currentView: ViewType;
   setView: (view: ViewType) => void;
+  onOpenInquiry: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
+const Navbar: React.FC<NavbarProps> = ({ currentView, setView, onOpenInquiry }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // 'admin' 메뉴를 기본 리스트에서 제거 (방문자 보호)
   const navItems = [
     { id: 'home', label: '홈' },
     { id: 'blog', label: '아트온톡' },
@@ -18,7 +18,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
     { id: 'club', label: '스피드부자 독서클럽' },
   ];
 
-  // 만약 현재 뷰가 admin이라면 상단에 관리자 모드 표시를 위해 추가 가능 (선택 사항)
   const allItems = currentView === 'admin' 
     ? [...navItems, { id: 'admin', label: '관리자 대시보드' }]
     : navItems;
@@ -33,22 +32,28 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
             </span>
           </div>
           
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
+          <div className="hidden md:flex items-center space-x-4">
+            <div className="flex items-baseline space-x-6 mr-6">
               {allItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setView(item.id as ViewType)}
-                  className={`px-3 py-2 rounded-md text-sm font-bold transition-all ${
+                  className={`px-3 py-2 rounded-md text-xs font-black tracking-widest transition-all uppercase ${
                     currentView === item.id 
                       ? 'text-purple-400' 
                       : 'text-gray-400 hover:text-white'
-                  } ${item.id === 'admin' ? 'bg-purple-900/20 px-4 ring-1 ring-purple-500/30' : ''}`}
+                  }`}
                 >
                   {item.label}
                 </button>
               ))}
             </div>
+            <button 
+              onClick={onOpenInquiry}
+              className="px-5 py-2 bg-purple-600 text-[11px] font-black tracking-widest rounded-full hover:bg-purple-700 transition-all shadow-lg shadow-purple-500/20 active:scale-95 uppercase"
+            >
+              Consulting
+            </button>
           </div>
 
           <div className="md:hidden">
@@ -68,7 +73,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-black border-b border-purple-900/30 animate-in slide-in-from-top-4 duration-300">
           <div className="px-4 pt-4 pb-6 space-y-2">
@@ -88,6 +92,15 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, setView }) => {
                 {item.label}
               </button>
             ))}
+            <button 
+              onClick={() => {
+                onOpenInquiry();
+                setIsOpen(false);
+              }}
+              className="block w-full px-4 py-3 bg-purple-600 text-white rounded-xl text-base font-bold"
+            >
+              상담 신청하기
+            </button>
           </div>
         </div>
       )}

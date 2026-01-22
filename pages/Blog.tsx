@@ -4,9 +4,10 @@ import { Post } from '../types';
 
 interface BlogProps {
   posts: Post[];
+  onOpenInquiry?: () => void;
 }
 
-const Blog: React.FC<BlogProps> = ({ posts }) => {
+const Blog: React.FC<BlogProps> = ({ posts, onOpenInquiry }) => {
   const [filter, setFilter] = useState<'all' | 'art' | 'club'>('all');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
@@ -51,7 +52,7 @@ const Blog: React.FC<BlogProps> = ({ posts }) => {
                   alt={post.title} 
                 />
                 <div className="absolute top-4 left-4 px-3 py-1 bg-black/70 backdrop-blur-md rounded-full text-[9px] font-black tracking-[0.2em] uppercase border border-white/10 text-purple-400">
-                  {post.category}
+                  {post.category === 'art' ? 'Art Coaching' : post.category === 'club' ? 'Speed Rich' : 'Notice'}
                 </div>
               </div>
               <div className="px-2 pb-4 flex flex-col flex-1">
@@ -128,6 +129,7 @@ const Blog: React.FC<BlogProps> = ({ posts }) => {
                   ))}
                 </div>
 
+                {/* 하단 문의 유도 영역 (이미지 속 그 부분) */}
                 <div className="mt-16 p-10 rounded-[2rem] bg-gradient-to-br from-purple-900/20 to-zinc-900 border border-purple-500/10 flex flex-col md:flex-row items-center justify-between gap-8">
                   <div className="text-center md:text-left">
                     <h4 className="text-xl font-black mb-2 italic">Inspiring Growth through Art</h4>
@@ -135,10 +137,11 @@ const Blog: React.FC<BlogProps> = ({ posts }) => {
                   </div>
                   <button 
                     onClick={() => {
-                      setSelectedPost(null);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      if(onOpenInquiry) {
+                        onOpenInquiry();
+                      }
                     }}
-                    className="px-8 py-4 bg-white text-black text-sm font-black rounded-full hover:bg-purple-500 hover:text-white transition-all duration-500 shadow-xl"
+                    className="px-8 py-4 bg-white text-black text-sm font-black rounded-full hover:bg-purple-500 hover:text-white transition-all duration-500 shadow-xl shadow-white/5 active:scale-95"
                   >
                     문의하기
                   </button>
